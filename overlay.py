@@ -99,8 +99,6 @@ class Window():
             position[0] += self.WIDTH/2
             position[1] -= self.HEIGHT/2
 
-        print(self.WIDTH)
-        print(self.HEIGHT)
         self.root.geometry(f'{self.WIDTH}x{self.HEIGHT}+{int(position[0])}+{int(position[1])}')
         self.root.after(self.UPDATE_TIME, self.update)
 

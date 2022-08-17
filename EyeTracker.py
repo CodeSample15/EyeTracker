@@ -377,9 +377,11 @@ def get_locations():
             x_dist = (math.tan(angle_x * math.pi / 180) * face_distance).real
             y_dist = -(math.tan(angle_y * math.pi / 180) * face_distance).real
 
-            return get_screen_pos(x_dist, y_dist)
+            smoother.set_target(get_screen_pos(x_dist, y_dist))
+
+            return smoother.current_x, smoother.current_y
         else:
-            return get_screen_pos(0,0)
+            return get_screen_pos(0,0) #center of screen; No offset from the center
 
 
 
