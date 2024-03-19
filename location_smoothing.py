@@ -36,6 +36,7 @@ class LocationSmoother:
         self.update_thread.join()
 
     def update(self):
+        self.running = True
         while self.running:
             errorx = self.target_x - self.current_x
             errory = self.target_y - self.current_y

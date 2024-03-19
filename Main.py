@@ -13,6 +13,7 @@ def clicked(icon, item):
     if str(item) == 'Calibrate':
         overlay.win.is_calibrating = True
     elif str(item) == 'Exit':
+        print("Stopping...")
         overlay.win.close_window()
         icon.stop()
 
@@ -33,6 +34,8 @@ def run():
     x.start()
 
     overlay.run()
+    x.join()
+    print("Stopped")
 
 
 if __name__ == '__main__':

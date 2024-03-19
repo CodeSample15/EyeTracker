@@ -21,7 +21,7 @@ CAMERA_WIDTH = frame.shape[1]
 CAMERA_HEIGHT = frame.shape[0]
 
 #for getting rid of the extra jitteryness of the mp solution
-smoother = LocationSmoother()
+smoother = LocationSmoother(kp = 0.1, dt=0.02)
 smoother.start()
 
 #tracking points
@@ -377,13 +377,15 @@ def get_locations():
             x_dist = (math.tan(angle_x * math.pi / 180) * face_distance).real
             y_dist = -(math.tan(angle_y * math.pi / 180) * face_distance).real
 
-            smoother.set_target(get_screen_pos(x_dist, y_dist))
+            screenPos = get_screen_pos(x_dist, y_dist)
+            smoother.set_target(screenPos[0], screenPos[1])
 
             return smoother.current_x, smoother.current_y
         else:
             return get_screen_pos(0,0) #center of screen; No offset from the center
 
-
+def stop():
+    vid.release()
 
 if __name__ == '__main__':
     run()

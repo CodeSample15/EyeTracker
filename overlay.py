@@ -21,7 +21,7 @@ CENTER_OF_SCREEN = (GetSystemMetrics(0) / 2, GetSystemMetrics(1) / 2)
 
 class Window():
     def __init__(self, update_time=300):
-        self.is_calibrating = True
+        self.is_calibrating = False
         self.__calibration_width = 60
         self.__calibration_height = 20
         self.__normal_width = 100
@@ -63,8 +63,9 @@ class Window():
 
 
     def close_window(self):
-        self.root.destroy()
         EyeTracker.smoother.stop() #stopping the smoothing thread
+        EyeTracker.stop()
+        self.root.destroy()
 
 
     def update(self):
