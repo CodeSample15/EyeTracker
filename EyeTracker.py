@@ -23,6 +23,8 @@ CAMERA_HEIGHT = frame.shape[0]
 smoother = LocationSmoother(kp = 0.1, dt=0.02)
 smoother.start()
 
+useLocSmoothing = True #whether or not to use the location smoother
+
 #tracking points
 RIGHT_POINT = 50
 LEFT_POINT = 280
@@ -387,7 +389,10 @@ def get_locations():
             screenPos = get_screen_pos(x_dist, y_dist)
             smoother.set_target(screenPos[0], screenPos[1])
 
-            return smoother.current_x, smoother.current_y
+            if useLocSmoothing:
+                return smoother.current_x, smoother.current_y
+            else:
+                return screenPos[0], screenPos[1]
         else:
             return get_screen_pos(0,0) #center of screen; No offset from the center
 

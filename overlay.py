@@ -21,13 +21,13 @@ CENTER_OF_SCREEN = (GetSystemMetrics(0) / 2, GetSystemMetrics(1) / 2)
 
 class Window():
     def __init__(self, update_time=300):
-        self.__normal_width = 100
-        self.__normal_height = 100
+        self._normal_width = 100
+        self._normal_height = 100
 
         self.XPOS = CENTER_OF_SCREEN[0]
         self.YPOS = CENTER_OF_SCREEN[1] 
-        self.WIDTH = self.__normal_width
-        self.HEIGHT = self.__normal_height
+        self.WIDTH = self._normal_width
+        self.HEIGHT = self._normal_height
 
         self.UPDATE_TIME = update_time
         self.running = True
@@ -38,15 +38,15 @@ class Window():
         self.root = tk.Tk()
 
         self.root.lift()
-        self.root.config(bg='white')
+        self.root.config(bg='black')
         self.root.overrideredirect(True)
-        self.root.wm_attributes("-transparentcolor", "white")
+        self.root.wm_attributes("-transparentcolor", "black")
         self.root.wm_attributes("-topmost", True)
 
-        self.temp = PIL.Image.open("Target.png")
+        self.temp = PIL.Image.open("Circle.png")
         self.img_copy = self.temp.copy()
         self.background = PIL.ImageTk.PhotoImage(self.temp)
-        self.image = tk.Label(self.root, image=self.background, bg='white')
+        self.image = tk.Label(self.root, image=self.background, bg='black')
         self.image.pack(fill='both', expand='yes')
         self.root.bind('<Configure>', self._resize_image)
 
@@ -67,8 +67,8 @@ class Window():
     def update(self):
         position = (0,0) #default
 
-        self.WIDTH = self.__normal_width
-        self.HEIGHT = self.__normal_height
+        self.WIDTH = self._normal_width
+        self.HEIGHT = self._normal_height
         #self.image.pack() #show the image
 
         position = list(EyeTracker.get_locations())
