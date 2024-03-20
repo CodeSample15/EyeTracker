@@ -10,9 +10,7 @@ import pystray
 import PIL.Image
 
 def clicked(icon, item):
-    if str(item) == 'Calibrate':
-        overlay.win.is_calibrating = True
-    elif str(item) == 'Exit':
+    if str(item) == 'Exit':
         print("Stopping...")
         overlay.win.close_window()
         icon.stop()
@@ -22,7 +20,10 @@ def tray_control():
     tray_img = PIL.Image.open("Icon.png")
 
     icon = pystray.Icon("EyeTracker", tray_img, menu=pystray.Menu(
-        pystray.MenuItem('Calibrate', clicked),
+        pystray.MenuItem('Location smoothing', 
+                         pystray.Menu(
+                             
+                         )),
         pystray.MenuItem('Exit', clicked)
     ))
 
@@ -30,7 +31,7 @@ def tray_control():
 
 
 def run():
-    x = threading.Thread(target=tray_control, daemon=True)
+    x = threading.Thread(target=tray_control)
     x.start()
 
     overlay.run()

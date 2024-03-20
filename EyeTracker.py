@@ -1,4 +1,3 @@
-from turtle import right
 import cv2
 import mediapipe as mp
 import pyautogui
@@ -288,6 +287,7 @@ def run():
                                                     landmarks[TOP_POINT].y, landmarks[TOP_POINT].z,
                                                     landmarks[BOTTOM_POINT].y, landmarks[BOTTOM_POINT].z)
 
+                '''
                 #calculate eye angles
                 eye_xr, eye_yr = eye_angles(landmarks, rightOuterEye, RIGHT_PUPIL_CENTER)
                 eye_xl, eye_yl = eye_angles(landmarks, leftOuterEye, LEFT_PUPIL_CENTER)
@@ -298,15 +298,16 @@ def run():
                 #adding the two angles together (face movement with eye movement)
                 angle_x = face_x + (eye_x)
                 angle_y = face_y + (eye_y)
+                '''
 
                 #calculating distance from the face to the screen
                 face_distance = get_face_distance(landmarks[RIGHT_IRIS_TOP], landmarks[RIGHT_IRIS_BOTTOM], landmarks[LEFT_IRIS_TOP], landmarks[LEFT_IRIS_BOTTOM])
 
                 #calculating distances across the screen from the center of the screen (angle of 0)
-                x_dist = (math.tan(angle_x * math.pi / 180) * face_distance).real
-                y_dist = -(math.tan(angle_y * math.pi / 180) * face_distance).real
+                x_dist = (math.tan(face_x * math.pi / 180) * face_distance).real
+                y_dist = -(math.tan(face_y * math.pi / 180) * face_distance).real
 
-                mouse_testing_point = get_screen_pos(x_dist, y_dist)
+                #smouse_testing_point = get_screen_pos(x_dist, y_dist)
 
                 #DEBUGGING LANDMARK POSITIONS
                 if testing:

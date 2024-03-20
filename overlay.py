@@ -21,9 +21,6 @@ CENTER_OF_SCREEN = (GetSystemMetrics(0) / 2, GetSystemMetrics(1) / 2)
 
 class Window():
     def __init__(self, update_time=300):
-        self.is_calibrating = False
-        self.__calibration_width = 60
-        self.__calibration_height = 20
         self.__normal_width = 100
         self.__normal_height = 100
 
@@ -33,12 +30,6 @@ class Window():
         self.HEIGHT = self.__normal_height
 
         self.UPDATE_TIME = update_time
-        self.CALIBRATION_POS = (
-                                (0, CENTER_OF_SCREEN[1] - (self.HEIGHT/2)),
-                                (CENTER_OF_SCREEN[0] - (self.WIDTH/2), GetSystemMetrics(1) - (self.HEIGHT)),
-                                (GetSystemMetrics(0) - (self.WIDTH), CENTER_OF_SCREEN[1] - (self.HEIGHT/2)),
-                                (CENTER_OF_SCREEN[0]-(self.WIDTH/2), 0)
-        )
 
         self.TIME_PER_POS = 4
         self.start_time = 0
@@ -71,34 +62,16 @@ class Window():
     def update(self):
         position = (0,0) #default
 
-        if self.is_calibrating:
-            self.WIDTH = self.__calibration_width
-            self.HEIGHT = self.__calibration_height
-            self.text.pack() #show the calibration text
-            self.image.pack_forget() #hide the image
+        self.WIDTH = self.__normal_width
+        self.HEIGHT = self.__normal_height
+        self.text.pack_forget() #hide the calibration text
+        self.image.pack() #show the image
 
-            time_elapsed = time.time() - self.start_time
-            if time_elapsed >= self.TIME_PER_POS:
-                if self.current_pos < 3:
-                    self.current_pos += 1
-                else:
-                    self.is_calibrating = False
-                    print("exiting calibration")
+        self.current_pos = 0
 
-                self.start_time = time.time()
-
-            position = self.CALIBRATION_POS[self.current_pos]
-        else:
-            self.WIDTH = self.__normal_width
-            self.HEIGHT = self.__normal_height
-            self.text.pack_forget() #hide the calibration text
-            self.image.pack() #show the image
-
-            self.current_pos = 0
-
-            position = list(EyeTracker.get_locations())
-            position[0] += self.WIDTH/2
-            position[1] -= self.HEIGHT/2
+        position = list(EyeTracker.get_locations())
+        position[0] += self.WIDTH/2
+        position[1] -= self.HEIGHT/2
 
         self.root.geometry(f'{self.WIDTH}x{self.HEIGHT}+{int(position[0])}+{int(position[1])}')
         self.root.after(self.UPDATE_TIME, self.update)
