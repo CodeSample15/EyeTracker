@@ -34,21 +34,29 @@ class Window():
 
         self.TIME_PER_POS = 4
         self.start_time = 0
-        self.current_pos = 0
 
         self.root = tk.Tk()
 
         self.root.lift()
-        self.root.config(bg='#add123')
+        self.root.config(bg='white')
         self.root.overrideredirect(True)
-        self.root.wm_attributes('-transparentcolor', '#add123')
+        self.root.wm_attributes("-transparentcolor", "white")
         self.root.wm_attributes("-topmost", True)
 
-        tmp = PIL.Image.open("Circle.png")
-        img = PIL.ImageTk.PhotoImage(tmp)
-        self.image = tk.Label(self.root, image=img)
+        self.temp = PIL.Image.open("Target.png")
+        self.img_copy = self.temp.copy()
+        self.background = PIL.ImageTk.PhotoImage(self.temp)
+        self.image = tk.Label(self.root, image=self.background, bg='white')
         self.image.pack(fill='both', expand='yes')
+        self.root.bind('<Configure>', self._resize_image)
 
+    def _resize_image(self, event):
+        new_width = event.width
+        new_height = event.height
+
+        self.temp = self.img_copy.resize((new_width, new_height))
+        self.background = PIL.ImageTk.PhotoImage(self.temp)
+        self.image.configure(image=self.background)
 
     def close_window(self):
         EyeTracker.smoother.stop() #stopping the smoothing thread
@@ -56,15 +64,12 @@ class Window():
 
         self.running = False
 
-
     def update(self):
         position = (0,0) #default
 
         self.WIDTH = self.__normal_width
         self.HEIGHT = self.__normal_height
-        self.image.pack() #show the image
-
-        self.current_pos = 0
+        #self.image.pack() #show the image
 
         position = list(EyeTracker.get_locations())
         position[0] += self.WIDTH/2
