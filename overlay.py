@@ -10,6 +10,7 @@ Every other process should be carried out in another script
 '''
 
 from win32api import GetSystemMetrics
+import threading
 import tkinter as tk
 import time
 import PIL.Image
@@ -59,6 +60,9 @@ class Window():
         self.image.configure(image=self.background)
 
     def close_window(self):
+        EyeTracker.running = False
+        self.eyeTrackingThread.join()
+
         EyeTracker.smoother.stop() #stopping the smoothing thread
         EyeTracker.stop()
 
@@ -84,6 +88,11 @@ class Window():
 
 
     def start(self):
+        #start eye tracking
+        EyeTracker.running = True
+        self.eyeTrackingThread = threading.Thread(target=EyeTracker.trackingThread)
+        self.eyeTrackingThread.start()
+
         self.start_time = time.time()
         self.running = True
 

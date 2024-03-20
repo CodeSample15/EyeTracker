@@ -345,56 +345,64 @@ def run():
 
 #for external scripts to get the points calculated by this script at any given moment
 #does not include debug stuff like the normal script does
-def get_locations():
+running = True
+current_position = (0,0)
+def trackingThread():
+    global current_position
+
+    #all calculations will be put here to minimize delay when the main script requests the current face position
     with face_mesh.FaceMesh(min_tracking_confidence=0.5, min_detection_confidence=0.5, static_image_mode=False, refine_landmarks=True) as face:
-        ret, image = vid.read()
+        while running:
+            ret, image = vid.read()
 
-        if not ret:
-            return get_screen_pos(0,0)
+            if not ret:
+                current_position = (0,0)
 
-        image.flags.writeable = False
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        results = face.process(image) #process image
+            image.flags.writeable = False
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            results = face.process(image) #process image
 
-        if results.multi_face_landmarks:
-            landmarks = results.multi_face_landmarks[0].landmark
+            if results.multi_face_landmarks:
+                landmarks = results.multi_face_landmarks[0].landmark
 
-            #calculating angles of face
-            face_x, face_y = calculate_angles(landmarks[RIGHT_POINT].x, landmarks[RIGHT_POINT].z,
-                                                landmarks[LEFT_POINT].x, landmarks[LEFT_POINT].z,
-                                                landmarks[TOP_POINT].y, landmarks[TOP_POINT].z,
-                                                landmarks[BOTTOM_POINT].y, landmarks[BOTTOM_POINT].z)
+                #calculating angles of face
+                face_x, face_y = calculate_angles(landmarks[RIGHT_POINT].x, landmarks[RIGHT_POINT].z,
+                                                    landmarks[LEFT_POINT].x, landmarks[LEFT_POINT].z,
+                                                    landmarks[TOP_POINT].y, landmarks[TOP_POINT].z,
+                                                    landmarks[BOTTOM_POINT].y, landmarks[BOTTOM_POINT].z)
 
-            #calculate eye angles
-            eye_xr, eye_yr = eye_angles(landmarks, rightOuterEye, RIGHT_PUPIL_CENTER)
-            eye_xl, eye_yl = eye_angles(landmarks, leftOuterEye, LEFT_PUPIL_CENTER)
+                #calculate eye angles
+                eye_xr, eye_yr = eye_angles(landmarks, rightOuterEye, RIGHT_PUPIL_CENTER)
+                eye_xl, eye_yl = eye_angles(landmarks, leftOuterEye, LEFT_PUPIL_CENTER)
 
-            eye_x = (eye_xr + eye_xl) / 2
-            eye_y = (eye_yr + eye_yl) / 2
+                eye_x = (eye_xr + eye_xl) / 2
+                eye_y = (eye_yr + eye_yl) / 2
 
-            eye_x = 0
-            eye_y = 0
+                eye_x = 0
+                eye_y = 0
 
-            #adding the two angles together (face movement with eye movement)
-            angle_x = face_x + (eye_x)
-            angle_y = face_y + (eye_y)
+                #adding the two angles together (face movement with eye movement)
+                angle_x = face_x + (eye_x)
+                angle_y = face_y + (eye_y)
 
-            #calculating distance from the face to the screen
-            face_distance = get_face_distance(landmarks[RIGHT_IRIS_TOP], landmarks[RIGHT_IRIS_BOTTOM], landmarks[LEFT_IRIS_TOP], landmarks[LEFT_IRIS_BOTTOM])
+                #calculating distance from the face to the screen
+                face_distance = get_face_distance(landmarks[RIGHT_IRIS_TOP], landmarks[RIGHT_IRIS_BOTTOM], landmarks[LEFT_IRIS_TOP], landmarks[LEFT_IRIS_BOTTOM])
 
-            #calculating distances across the screen from the center of the screen (angle of 0)
-            x_dist = (math.tan(angle_x * math.pi / 180) * face_distance).real
-            y_dist = -(math.tan(angle_y * math.pi / 180) * face_distance).real
+                #calculating distances across the screen from the center of the screen (angle of 0)
+                x_dist = (math.tan(angle_x * math.pi / 180) * face_distance).real
+                y_dist = -(math.tan(angle_y * math.pi / 180) * face_distance).real
 
-            screenPos = get_screen_pos(x_dist, y_dist)
-            smoother.set_target(screenPos[0], screenPos[1])
-
-            if useLocSmoothing:
-                return smoother.current_x, smoother.current_y
+                current_position = get_screen_pos(x_dist, y_dist)
             else:
-                return screenPos[0], screenPos[1]
-        else:
-            return get_screen_pos(0,0) #center of screen; No offset from the center
+                current_position = (0,0) #center of screen; No offset from the center
+
+def get_locations():
+    smoother.set_target(current_position[0], current_position[1])
+
+    if useLocSmoothing:
+        return smoother.current_x, smoother.current_y
+    
+    return current_position[0], current_position[1]
 
 def stop():
     vid.release()
