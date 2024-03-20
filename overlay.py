@@ -30,6 +30,7 @@ class Window():
         self.HEIGHT = self.__normal_height
 
         self.UPDATE_TIME = update_time
+        self.running = True
 
         self.TIME_PER_POS = 4
         self.start_time = 0
@@ -43,20 +44,17 @@ class Window():
         self.root.wm_attributes('-transparentcolor', '#add123')
         self.root.wm_attributes("-topmost", True)
 
-        self.text = tk.Label(self.root, text='Look here')
-        self.text.pack()
-
-
-        tmp = PIL.Image.open("Target.png")
+        tmp = PIL.Image.open("Circle.png")
         img = PIL.ImageTk.PhotoImage(tmp)
         self.image = tk.Label(self.root, image=img)
-        self.image.pack()
+        self.image.pack(fill='both', expand='yes')
 
 
     def close_window(self):
         EyeTracker.smoother.stop() #stopping the smoothing thread
         EyeTracker.stop()
-        self.root.destroy()
+
+        self.running = False
 
 
     def update(self):
@@ -64,7 +62,6 @@ class Window():
 
         self.WIDTH = self.__normal_width
         self.HEIGHT = self.__normal_height
-        self.text.pack_forget() #hide the calibration text
         self.image.pack() #show the image
 
         self.current_pos = 0
@@ -74,11 +71,16 @@ class Window():
         position[1] -= self.HEIGHT/2
 
         self.root.geometry(f'{self.WIDTH}x{self.HEIGHT}+{int(position[0])}+{int(position[1])}')
-        self.root.after(self.UPDATE_TIME, self.update)
+
+        if self.running:
+            self.root.after(self.UPDATE_TIME, self.update)
+        else:
+            self.root.destroy()
 
 
     def start(self):
         self.start_time = time.time()
+        self.running = True
 
         self.root.after(self.UPDATE_TIME, self.update)
         self.root.mainloop()

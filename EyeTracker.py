@@ -268,6 +268,9 @@ def run():
     with face_mesh.FaceMesh(min_tracking_confidence=0.5, min_detection_confidence=0.5, static_image_mode=False, refine_landmarks=True) as face:
         while True:
             ret, image = vid.read()
+
+            if image == None or not ret:
+                break
             
             #mark frame as not writable to pass by reference and improve performance
             image.flags.writeable = False
@@ -343,6 +346,9 @@ def run():
 def get_locations():
     with face_mesh.FaceMesh(min_tracking_confidence=0.5, min_detection_confidence=0.5, static_image_mode=False, refine_landmarks=True) as face:
         ret, image = vid.read()
+
+        if not ret:
+            return get_screen_pos(0,0)
 
         image.flags.writeable = False
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
