@@ -3,8 +3,6 @@ This script will be used to draw everything that the user will see on their scre
 Including: 
     - Marker indicating where the user is looking 
         (that should be showing all the time so the user doesn't leave the program running in the background by accident)
-    - Clibration points
-        (main code will actually do the calibration and tell this script to hide the overlay afterwords)
 
 Every other process should be carried out in another script
 '''
@@ -12,11 +10,11 @@ Every other process should be carried out in another script
 from win32api import GetSystemMetrics
 import threading
 import tkinter as tk
-import time
 import PIL.Image
 import PIL.ImageTk
 
 import EyeTracker
+import pyautogui
 
 CENTER_OF_SCREEN = (GetSystemMetrics(0) / 2, GetSystemMetrics(1) / 2)
 
@@ -36,6 +34,12 @@ class Window():
         self.TIME_PER_POS = 4
         self.start_time = 0
 
+        #for handling the mouse control
+        self.WINK_ACTIVATION_FRAME_NUM = 3
+        self.winkingFrames = 0
+        self.holdingMouse = False
+
+        #setting up the window
         self.root = tk.Tk()
 
         self.root.lift()
@@ -79,6 +83,28 @@ class Window():
         position[0] += self.WIDTH/2
         position[1] -= self.HEIGHT/2
 
+        if self.running:
+            #handle mouse control
+            if EyeTracker.winking:
+                self.winkingFrames += 1
+
+                if self.winkingFrames >= self.WINK_ACTIVATION_FRAME_NUM:
+                    #register the wink
+                    pyautogui.moveTo(position[0] + (self._normal_width/2), position[1] + (self._normal_height/2))
+                    if not self.holdingMouse:
+                        pyautogui.mouseDown()
+
+                    self.holdingMouse = True
+
+                    self.WIDTH = 0 #hide the window
+                    self.HEIGHT = 0
+            else:
+                self.winkingFrames = 0
+
+                if self.holdingMouse:
+                    pyautogui.mouseUp()
+                    self.holdingMouse = False
+
         self.root.geometry(f'{self.WIDTH}x{self.HEIGHT}+{int(position[0])}+{int(position[1])}')
 
         if self.running:
@@ -89,17 +115,18 @@ class Window():
 
     def start(self):
         #start eye tracking
+        EyeTracker.smoother.start() 
+
         EyeTracker.running = True
         self.eyeTrackingThread = threading.Thread(target=EyeTracker.trackingThread)
         self.eyeTrackingThread.start()
 
-        self.start_time = time.time()
         self.running = True
 
         self.root.after(self.UPDATE_TIME, self.update)
         self.root.mainloop()
 
-win = Window(10)
+win = Window(5)
 
 def run():
     win.start()

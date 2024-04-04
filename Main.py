@@ -1,8 +1,3 @@
-'''
-I'm really just using this script to have a more clean way of managing all of the background tasks of this program
-(Eye tracking, overlay, and tray icon)
-'''
-
 import overlay
 import threading
 import EyeTracker as tracker

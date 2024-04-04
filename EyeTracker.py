@@ -1,12 +1,12 @@
 import cv2
+import time
 import mediapipe as mp
 import pyautogui
-import numpy as np
 import math
 from win32api import GetSystemMetrics
 import threading
-import os
 import keyboard
+
 from location_smoothing import LocationSmoother
 
 face_mesh = mp.solutions.face_mesh
@@ -20,8 +20,7 @@ CAMERA_WIDTH = frame.shape[1]
 CAMERA_HEIGHT = frame.shape[0]
 
 #for getting rid of the extra jitteryness of the mp solution
-smoother = LocationSmoother(kp = 0.1, dt=0.02)
-smoother.start()
+smoother = LocationSmoother(kp = 0.2, dt=0.05)
 
 useLocSmoothing = True #whether or not to use the location smoother
 
@@ -36,24 +35,24 @@ RIGHT_IRIS_BOTTOM = 472
 RIGHT_IRIS_RIGHT = 471
 RIGHT_IRIS_LEFT = 469
 
-#these points will be used for finding the eye angles (actual eye, not the iris)
-RIGHT_EYE_TOP = 27 #159
-RIGHT_EYE_BOTTOM = 230
-RIGHT_EYE_RIGHT = 246
-RIGHT_EYE_LEFT = 173
-
-LEFT_EYE_TOP = 257
-LEFT_EYE_BOTTOM = 450
-LEFT_EYE_RIGHT = 398
-LEFT_EYE_LEFT = 263
-
-RIGHT_PUPIL_CENTER = 468
-LEFT_PUPIL_CENTER = 473
-
 LEFT_IRIS_TOP = 475 #these two tracking points are for averaging out the distance to the face
 LEFT_IRIS_BOTTOM = 477
 LEFT_IRIS_RIGHT = 476
 LEFT_IRIS_LEFT = 474
+
+#these points will be used for finding the eye angles (actual eye, not the iris)
+RIGHT_EYE_TOP = 159
+RIGHT_EYE_BOTTOM = 145
+RIGHT_EYE_RIGHT = 33
+RIGHT_EYE_LEFT = 133
+
+LEFT_EYE_TOP = 386
+LEFT_EYE_BOTTOM = 374
+LEFT_EYE_RIGHT = 362
+LEFT_EYE_LEFT = 263
+
+RIGHT_PUPIL_CENTER = 468
+LEFT_PUPIL_CENTER = 473
 
 #constants
 DISTANCE_MODIFIER = 1
@@ -76,7 +75,7 @@ def testscript():
     global testing
     global mouse_point
 
-    change_points = False #if set to false, the program will start to move the mouse to debug positions being calculated
+    change_points = True #if set to false, the program will start to move the mouse to debug positions being calculated
 
     while testing:
         if change_points:
@@ -255,8 +254,24 @@ def eye_angles(landmarks, eye, pupil):
     #return these results as x and y values
     return x, y
 
+def isWinking(landmarks):
+    rightOuterEye.setLand(landmarks)
+    leftOuterEye.setLand(landmarks)
+
+    rightLRDist = rightOuterEye.distance("left right")
+    rightTBDist = max(0.0001, rightOuterEye.distance("top bottom")) #avoid divide by 0 error
+    rightRatio = rightLRDist / rightTBDist
+
+    leftLRDist = leftOuterEye.distance("left right")
+    leftTBDist = max(0.0001, leftOuterEye.distance("top bottom"))
+    leftRatio = leftLRDist / leftTBDist
+    
+    rightClosed = rightRatio >= 5
+    leftClosed = leftRatio >= 5
+
+    return (not (rightClosed and leftClosed)) and (rightClosed or leftClosed)
+
 def draw_point(img, point, color=(255, 0, 0)):
-    global landmarks
     px = int(landmarks[point].x * CAMERA_WIDTH)
     py = int(landmarks[point].y * CAMERA_HEIGHT)
     img = cv2.circle(img, (px, py), 3, color, -1)
@@ -264,6 +279,7 @@ def draw_point(img, point, color=(255, 0, 0)):
 #running the face detection for debugging purposes
 def run():
     global testing, landmarks
+    testing = True
     testthread = threading.Thread(target=testscript)
     testthread.start()
 
@@ -271,7 +287,7 @@ def run():
         while True:
             ret, image = vid.read()
 
-            if image == None or not ret:
+            if not ret:
                 break
             
             #mark frame as not writable to pass by reference and improve performance
@@ -317,19 +333,20 @@ def run():
                 #DEBUGGING LANDMARK POSITIONS
                 if testing:
                     draw_point(image, test_point, color=(0, 255, 0))
+                    print(test_point)
 
-                draw_point(image, TOP_POINT)
-                draw_point(image, BOTTOM_POINT)
-                draw_point(image, LEFT_POINT)
-                draw_point(image, RIGHT_POINT)
+                #draw_point(image, TOP_POINT)
+                #draw_point(image, BOTTOM_POINT)
+                #draw_point(image, LEFT_POINT)
+                #draw_point(image, RIGHT_POINT)
 
                 rightOuterEye.setLand(landmarks)
                 rightOuterEye.draw(image, color=(0, 0, 255))
-                draw_point(image, RIGHT_PUPIL_CENTER, color=(0, 255, 255))
+                #draw_point(image, RIGHT_PUPIL_CENTER, color=(0, 255, 255))
 
                 leftOuterEye.setLand(landmarks)
                 leftOuterEye.draw(image, color=(0, 0, 255))
-                draw_point(image, LEFT_PUPIL_CENTER, color=(0, 255, 255))
+                #draw_point(image, LEFT_PUPIL_CENTER, color=(0, 255, 255))
 
             #for exiting the program
             cv2.imshow('frame', cv2.flip(image, 1))
@@ -347,8 +364,9 @@ def run():
 #does not include debug stuff like the normal script does
 running = True
 current_position = (0,0)
+winking = False
 def trackingThread():
-    global current_position
+    global current_position, winking
 
     #all calculations will be put here to minimize delay when the main script requests the current face position
     with face_mesh.FaceMesh(min_tracking_confidence=0.5, min_detection_confidence=0.5, static_image_mode=False, refine_landmarks=True) as face:
@@ -393,8 +411,14 @@ def trackingThread():
                 y_dist = -(math.tan(angle_y * math.pi / 180) * face_distance).real
 
                 current_position = get_screen_pos(x_dist, y_dist)
+
+                #detect winking
+                winking = isWinking(landmarks)
             else:
                 current_position = (0,0) #center of screen; No offset from the center
+                winking = False #just to make sure this isn't accidentally permanently set to on when a face disappears
+
+            time.sleep(0.005)
 
 def get_locations():
     smoother.set_target(current_position[0], current_position[1])
