@@ -12,6 +12,7 @@ import threading
 import tkinter as tk
 import PIL.Image
 import PIL.ImageTk
+import numpy as np
 
 import EyeTracker
 import pyautogui
@@ -39,6 +40,9 @@ class Window():
         self.winkingFrames = 0
         self.holdingMouse = False
 
+        #for color customization
+        self.color = 'white'
+
         #setting up the window
         self.root = tk.Tk()
 
@@ -60,7 +64,22 @@ class Window():
         new_height = event.height
 
         self.temp = self.img_copy.resize((new_width, new_height))
+
+        #assign color to window (customization)
+        im = np.array(self.temp)
+        
+        if self.color == 'red':
+            im[np.where((im==[255, 255, 255, 255]).all(axis=2))] = [255, 0, 0, 255]
+        elif self.color == 'green':
+            im[np.where((im==[255, 255, 255, 255]).all(axis=2))] = [0, 255, 0, 255]
+        elif self.color == 'blue':
+            im[np.where((im==[255, 255, 255, 255]).all(axis=2))] = [0, 0, 255, 255]
+
+        self.temp = PIL.Image.fromarray(im)
+
+        #apply image
         self.background = PIL.ImageTk.PhotoImage(self.temp)
+
         self.image.configure(image=self.background)
 
     def close_window(self):
